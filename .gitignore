@@ -1,0 +1,8 @@
+# package directories
+node_modules
+
+# bundle
+/dist
+
+# secrets
+.env
