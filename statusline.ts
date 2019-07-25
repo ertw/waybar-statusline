@@ -1,7 +1,7 @@
 import fs from 'fs'
 import child_process from 'child_process'
 import util from 'util'
-import moment from 'moment'
+import moment, { Moment } from 'moment'
 const { promisify } = util
 const readFile = promisify(fs.readFile);
 const exec = promisify(child_process.exec);
@@ -13,6 +13,7 @@ interface StatusItems {
     batteryCapacity: number
     ssid: string
     ping: string
+    date: Moment
 }
 
 class StatusLine {
@@ -35,6 +36,7 @@ class StatusLine {
         batteryCapacity: 0,
         ssid: '...',
         ping: '...',
+        date: moment()
     }
 
     private setBatteryStatus = async () => {
@@ -94,9 +96,17 @@ class StatusLine {
         return this.statusLine.ping
     }
 
+    private setDate = () => {
+        this.statusLine.date = moment()
+    }
+
+    public get date(): string {
+        return this.statusLine.date.format('ddd D-MMM   HH:mm:ss')
+    }
+
     public printStatusLine = async () => {
-        const date = moment().format('ddd D-MMM   HH:mm:ss').trim()
-        console.log(`⧙ 🌩 ${this.ping} ⧘   ⧙ ${this.batteryStatus} ${this.batteryCapacity.trim()}% ⧘   ⧙ 📶 ${this.ssid} ⧘   ⧙ ${date} ⧘  `)
+        this.setDate()
+        console.log(`⧙ 🌩 ${this.ping} ⧘   ⧙ ${this.batteryStatus} ${this.batteryCapacity.trim()}% ⧘   ⧙ 📶 ${this.ssid} ⧘   ⧙ ${this.date} ⧘  `)
     }
 }
 
