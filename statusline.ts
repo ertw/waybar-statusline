@@ -12,7 +12,7 @@ interface StatusItems {
     batteryStatus: string
     batteryCapacity: number
     ssid: string
-    ping: string
+    ping: number
     date: Moment
 }
 
@@ -35,7 +35,7 @@ class StatusLine {
         batteryStatus: '...',
         batteryCapacity: 0,
         ssid: '...',
-        ping: '...',
+        ping: 0,
         date: moment()
     }
 
@@ -89,11 +89,11 @@ class StatusLine {
 
     private setPing = async () => {
         const { stdout, stderr } = await exec("ping -c 1 www.bing.com | awk -F '/' 'END {print $5}'")
-        this.statusLine.ping = `${parseInt(stdout.trim()).toString()}ms`
+        this.statusLine.ping = parseInt(stdout.trim())
     }
 
     public get ping(): string {
-        return this.statusLine.ping
+        return this.statusLine.ping.toString()
     }
 
     private setDate = () => {
@@ -106,7 +106,7 @@ class StatusLine {
 
     public printStatusLine = async () => {
         this.setDate()
-        console.log(`⧙ 🌩 ${this.ping} ⧘   ⧙ ${this.batteryStatus} ${this.batteryCapacity.trim()}% ⧘   ⧙ 📶 ${this.ssid} ⧘   ⧙ ${this.date} ⧘  `)
+        console.log(`⧙ 🌩 ${this.ping}ms ⧘   ⧙ ${this.batteryStatus} ${this.batteryCapacity.trim()}% ⧘   ⧙ 📶 ${this.ssid} ⧘   ⧙ ${this.date} ⧘  `)
     }
 }
 
