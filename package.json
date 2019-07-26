@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
+    "start": "node ./dist/statusline.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
