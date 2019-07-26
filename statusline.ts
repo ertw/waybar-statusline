@@ -6,7 +6,7 @@ const { promisify } = util
 const readFile = promisify(fs.readFile);
 const exec = promisify(child_process.exec);
 
-type Status = 'Charging' | 'Discharging' | 'Full' | 'Unknown'
+type BatteryStatus = 'Charging' | 'Discharging' | 'Full' | 'Unknown'
 
 type ShouldDisplay = true | false
 
@@ -68,15 +68,15 @@ class StatusLine {
     }
 
     private setBatteryStatus = async () => {
-        const status = await readFile('/sys/class/power_supply/BAT0/status', 'utf8') as Status
-        const icons: Array<[Status, string]> = [
+        const batteryStatus = await readFile('/sys/class/power_supply/BAT0/status', 'utf8') as BatteryStatus
+        const icons: Array<[BatteryStatus, string]> = [
             ['Charging', '⭫🔌'],
             ['Discharging', '⭭🔋'],
             ['Full', '🔌'],
             ['Unknown', '⚡'],
         ]
         const icon = icons
-            .find(tuple => tuple[1] === status.trim()) || ['Unknown', '⚡'] as [Status, string]
+            .find(tuple => tuple[1] === batteryStatus.trim()) || ['Unknown', '⚡'] as [BatteryStatus, string]
         this.statusLine.batteryStatus = icon[1]
         this.setFormattedBatteryInfo()
     }
