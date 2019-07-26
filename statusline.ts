@@ -89,7 +89,7 @@ class StatusLine {
             const { stdout, stderr } = await exec('iwgetid -r')
             if (stdout) {
                 this.statusLine.ssid = [stdout.trim(), true]
-                this.statusLine._ssid = `⧙ 📶 ${this.statusLine.ssid[0]} ⧘`
+                this.statusLine._ssid = `📶 ${this.statusLine.ssid[0]}`
             }
             if (stderr) {
                 this.statusLine.ssid[1] = false
@@ -105,7 +105,7 @@ class StatusLine {
     }
 
     private setFormattedBatteryInfo = () => {
-        this.statusLine._formattedBatteryInfo = `⧙ ${this.batteryStatus} ${this.batteryCapacity.trim()}% ⧘`
+        this.statusLine._formattedBatteryInfo = `${this.batteryStatus} ${this.batteryCapacity.trim()}%`
     }
 
     private get _formattedBatteryInfo() {
@@ -117,7 +117,7 @@ class StatusLine {
             const { stdout, stderr } = await exec("ping -c 1 www.bing.com | awk -F '/' 'END {print $5}'")
             if (stdout) {
                 this.statusLine.ping = [parseInt(stdout.trim()), true]
-                this.statusLine._ping = `⧙ 🌩 ${this.statusLine.ping[0]}ms ⧘`
+                this.statusLine._ping = `🌩 ${this.statusLine.ping[0]}ms`
             }
             if (stderr) {
                 this.statusLine.ping = [0, false]
@@ -133,7 +133,7 @@ class StatusLine {
 
     private setDate = () => {
         this.statusLine.date = moment()
-        this.statusLine._date = `⧙ ${this.statusLine.date.format('ddd D-MMM   HH:mm:ss')} ⧘`
+        this.statusLine._date = `${this.statusLine.date.format('ddd D-MMM   HH:mm:ss')}`
     }
 
     private get _date(): string {
