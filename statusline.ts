@@ -3,8 +3,8 @@ import child_process from 'child_process'
 import util from 'util'
 import moment, { Moment } from 'moment'
 const { promisify } = util
-const readFile = promisify(fs.readFile);
-const exec = promisify(child_process.exec);
+const readFile = promisify(fs.readFile)
+const exec = promisify(child_process.exec)
 
 type BatteryStatus = 'Charging' | 'Discharging' | 'Full' | 'Unknown'
 
@@ -27,16 +27,16 @@ interface StatusItems {
 class StatusLine {
     constructor() {
         this.setBatteryStatus()
-        setInterval(() => this.setBatteryStatus(), 2000);
+        setInterval(() => this.setBatteryStatus(), 2000)
 
         this.setBatteryCapacity()
-        setInterval(() => this.setBatteryCapacity(), 10000);
+        setInterval(() => this.setBatteryCapacity(), 10000)
 
         this.setSsid()
-        setInterval(() => this.setSsid(), 5000);
+        setInterval(() => this.setSsid(), 5000)
 
         this.setPing()
-        setInterval(() => this.setPing(), 5000);
+        setInterval(() => this.setPing(), 5000)
     }
 
     private statusLine: StatusItems = {
