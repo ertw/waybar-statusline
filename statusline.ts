@@ -117,7 +117,7 @@ class StatusLine {
             const { stdout, stderr } = await exec("ping -c 1 www.bing.com | awk -F '/' 'END {print $5}'")
             if (stdout) {
                 this.statusLine.ping = [parseInt(stdout.trim()), true]
-                this.statusLine._ping = `🌩 ${this.statusLine.ping[0]}ms`
+                this.statusLine._ping = `🌩 ${isNaN(this.statusLine.ping[0]) ? 'drop' : this.statusLine.ping[0] + 'ms'}`
             }
             if (stderr) {
                 this.statusLine.ping = [0, false]
