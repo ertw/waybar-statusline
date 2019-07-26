@@ -75,8 +75,9 @@ class StatusLine {
             ['Full', '🔌'],
             ['Unknown', '⚡'],
         ]
-        const icon = icons.find(tuple => tuple[0] === status.trim())
-        this.statusLine.batteryStatus = icon && icon.length === 2 ? icon[1] : '...'
+        const icon = icons
+            .find(tuple => tuple[1] === status.trim()) || ['Unknown', '⚡'] as [Status, string]
+        this.statusLine.batteryStatus = icon[1]
         this.setFormattedBatteryInfo()
     }
 
