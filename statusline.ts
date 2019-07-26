@@ -8,12 +8,20 @@ const exec = promisify(child_process.exec);
 
 type Status = 'Charging' | 'Discharging' | 'Full' | 'Unknown'
 
+type ShouldDisplay = true | false
+
 interface StatusItems {
     batteryStatus: string
+    _batteryStatus: string
     batteryCapacity: number
-    ssid: string
-    ping: number
+    _batteryCapacity: string
+    _formattedBatteryInfo: string
+    ssid: [string, ShouldDisplay]
+    _ssid: string
+    ping: [number, ShouldDisplay]
+    _ping: string
     date: Moment
+    _date: string
 }
 
 class StatusLine {
@@ -33,10 +41,30 @@ class StatusLine {
 
     private statusLine: StatusItems = {
         batteryStatus: '...',
+        _batteryStatus: '',
         batteryCapacity: 0,
-        ssid: '...',
-        ping: 0,
-        date: moment()
+        _batteryCapacity: '',
+        _formattedBatteryInfo: '',
+        ssid: ['...', false],
+        _ssid: '',
+        ping: [0, false],
+        _ping: '',
+        date: moment(),
+        _date: ''
+    }
+
+    private shouldDisplay(tuple: [any, ShouldDisplay]) {
+        return tuple[1]
+    }
+
+    private setBatteryCapacity = async () => {
+        const batteryCapacity = await readFile('/sys/class/power_supply/BAT0/capacity', 'utf8')
+        this.statusLine.batteryCapacity = parseInt(batteryCapacity)
+        this.setFormattedBatteryInfo()
+    }
+
+    private get batteryCapacity(): string {
+        return (this.statusLine.batteryCapacity <= 100 ? this.statusLine.batteryCapacity.toString() : 'Full')
     }
 
     private setBatteryStatus = async () => {
@@ -49,50 +77,82 @@ class StatusLine {
         ]
         const icon = icons.find(tuple => tuple[0] === status.trim())
         this.statusLine.batteryStatus = icon && icon.length === 2 ? icon[1] : '...'
+        this.setFormattedBatteryInfo()
     }
 
-    private setBatteryCapacity = async () => {
-        const batteryCapacity = await readFile('/sys/class/power_supply/BAT0/capacity', 'utf8')
-        this.statusLine.batteryCapacity = parseInt(batteryCapacity)
-    }
-
-    public get batteryCapacity(): string {
-        return (this.statusLine.batteryCapacity <= 100 ? this.statusLine.batteryCapacity.toString() : 'Full')
-    }
-
-    public get batteryStatus(): string {
+    private get batteryStatus(): string {
         return this.statusLine.batteryStatus
     }
 
     private setSsid = async () => {
-        const { stdout, stderr } = await exec('iwgetid -r')
-        this.statusLine.ssid = stdout.trim()
+        try {
+            const { stdout, stderr } = await exec('iwgetid -r')
+            if (stdout) {
+                this.statusLine.ssid = [stdout.trim(), true]
+                this.statusLine._ssid = `⧙ 📶 ${this.statusLine.ssid[0]} ⧘`
+            }
+            if (stderr) {
+                this.statusLine.ssid[1] = false
+            }
+        } catch (error) {
+            this.statusLine.ssid[1] = false
+
+        }
     }
 
-    public get ssid(): string {
-        return this.statusLine.ssid
+    private get _ssid() {
+        return this.shouldDisplay(this.statusLine.ssid) ? this.statusLine._ssid : null
+    }
+
+    private setFormattedBatteryInfo = () => {
+        this.statusLine._formattedBatteryInfo = `⧙ ${this.batteryStatus} ${this.batteryCapacity.trim()}% ⧘`
+    }
+
+    private get _formattedBatteryInfo() {
+        return this.statusLine._formattedBatteryInfo
     }
 
     private setPing = async () => {
-        const { stdout, stderr } = await exec("ping -c 1 www.bing.com | awk -F '/' 'END {print $5}'")
-        this.statusLine.ping = parseInt(stdout.trim())
+        try {
+            const { stdout, stderr } = await exec("ping -c 1 www.bing.com | awk -F '/' 'END {print $5}'")
+            if (stdout) {
+                this.statusLine.ping = [parseInt(stdout.trim()), true]
+                this.statusLine._ping = `⧙ 🌩 ${this.statusLine.ping[0]}ms ⧘`
+            }
+            if (stderr) {
+                this.statusLine.ping = [0, false]
+            }
+        } catch (error) {
+            this.statusLine.ping = [0, false]
+        }
     }
 
-    public get ping(): string {
-        return this.statusLine.ping.toString()
+    private get _ping() {
+        return this.shouldDisplay(this.statusLine.ping) ? this.statusLine._ping : null
     }
 
     private setDate = () => {
         this.statusLine.date = moment()
+        this.statusLine._date = `⧙ ${this.statusLine.date.format('ddd D-MMM   HH:mm:ss')} ⧘`
     }
 
-    public get date(): string {
-        return this.statusLine.date.format('ddd D-MMM   HH:mm:ss')
+    private get _date(): string {
+        return this.statusLine._date
     }
 
     public printStatusLine = async () => {
         this.setDate()
-        console.log(`⧙ 🌩 ${this.ping}ms ⧘   ⧙ ${this.batteryStatus} ${this.batteryCapacity.trim()}% ⧘   ⧙ 📶 ${this.ssid} ⧘   ⧙ ${this.date} ⧘  `)
+        const items = [
+            this._ping,
+            this._formattedBatteryInfo,
+            this._ssid,
+            this._date,
+        ]
+            .filter(x => x !== null)
+            .map(x => `${x}  `)
+            .join(`   `)
+
+        console.log(items)
     }
 }
 
