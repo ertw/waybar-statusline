@@ -68,15 +68,14 @@ class StatusLine {
     }
 
     private setBatteryStatus = async () => {
-        const batteryStatus = await readFile('/sys/class/power_supply/BAT0/status', 'utf8') as BatteryStatus
+        const status = await readFile('/sys/class/power_supply/BAT0/status', 'utf8') as BatteryStatus
         const icons: Array<[BatteryStatus, string]> = [
             ['Charging', '⭫🔌'],
             ['Discharging', '⭭🔋'],
             ['Full', '🔌'],
             ['Unknown', '⚡'],
         ]
-        const icon = icons
-            .find(tuple => tuple[1] === batteryStatus.trim()) || ['Unknown', '⚡'] as [BatteryStatus, string]
+        const icon = icons.find(tuple => tuple[0] === status.trim()) || ['Unknown', '⚡']
         this.statusLine.batteryStatus = icon[1]
         this.setFormattedBatteryInfo()
     }
