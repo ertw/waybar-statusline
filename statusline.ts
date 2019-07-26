@@ -142,17 +142,17 @@ class StatusLine {
 
     public printStatusLine = async () => {
         this.setDate()
-        const items = [
-            this._ping,
-            this._formattedBatteryInfo,
-            this._ssid,
-            this._date,
-        ]
-            .filter(x => x !== null)
-            .map(x => `${x}  `)
-            .join(`   `)
-
-        console.log(items)
+        console.log(
+            [
+                this._ping,
+                this._formattedBatteryInfo,
+                this._ssid,
+                this._date,
+            ]
+                .filter(x => x !== null)
+                .map(x => `${x}  `)
+                .join(`   `)
+        )
     }
 }
 
