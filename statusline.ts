@@ -1,4 +1,4 @@
-import fs, { stat } from 'fs'
+import fs from 'fs'
 import child_process from 'child_process'
 import util from 'util'
 import moment, { Moment } from 'moment'
