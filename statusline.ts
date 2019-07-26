@@ -1,4 +1,4 @@
-import fs from 'fs'
+import fs, { stat } from 'fs'
 import child_process from 'child_process'
 import util from 'util'
 import moment, { Moment } from 'moment'
@@ -41,28 +41,14 @@ class StatusLine {
 
     private setBatteryStatus = async () => {
         const status = await readFile('/sys/class/power_supply/BAT0/status', 'utf8') as Status
-        switch (status.trim()) {
-            case 'Charging': {
-                this.statusLine.batteryStatus = '⭫🔌'
-                break
-            }
-            case 'Discharging': {
-                this.statusLine.batteryStatus = '⭭🔋'
-                break
-            }
-            case 'Full': {
-                this.statusLine.batteryStatus = '🔌'
-                break
-            }
-            case 'Unknown': {
-                this.statusLine.batteryStatus = '⚡'
-                break
-            }
-            default: {
-                this.statusLine.batteryStatus = '...'
-                break
-            }
-        }
+        const icons: Array<[Status, string]> = [
+            ['Charging', '⭫🔌'],
+            ['Discharging', '⭭🔋'],
+            ['Full', '🔌'],
+            ['Unknown', '⚡'],
+        ]
+        const icon = icons.find(tuple => tuple[0] === status.trim())
+        this.statusLine.batteryStatus = icon && icon.length === 2 ? icon[1] : '...'
     }
 
     private setBatteryCapacity = async () => {
