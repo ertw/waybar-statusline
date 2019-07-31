@@ -15,7 +15,6 @@ interface StatusItems {
     batteryCapacity: number
     ssid: [string, ShouldDisplay]
     ping: [number, ShouldDisplay]
-    _ping: string
     date: Moment
     _date: string
     readonly batteryIcons: Array<[BatteryStatus, string]>
@@ -42,7 +41,6 @@ class StatusLine {
         batteryCapacity: 0,
         ssid: ['...', false],
         ping: [0, false],
-        _ping: '',
         date: moment(),
         _date: '',
         batteryIcons: [
@@ -124,14 +122,16 @@ class StatusLine {
         const ping = stdout && stderr === '' ? parseInt(stdout.trim()) : -1
         if (ping >= 0) {
             this.state.ping = [ping, true]
-            this.state._ping = `🌩 ${isNaN(this.state.ping[0]) ? 'drop' : this.state.ping[0] + 'ms'}`
         } else {
             this.state.ping = [0, false]
         }
     }
 
-    private get _ping() {
-        return this.shouldDisplay(this.state.ping) ? this.state._ping : null
+    private get ping() {
+        return this.shouldDisplay(this.state.ping)
+            ? `🌩 ${isNaN(this.state.ping[0]) ? 'drop' : this.state.ping[0] + 'ms'}`
+            : null
+
     }
 
     private setDate = () => {
@@ -147,7 +147,7 @@ class StatusLine {
         this.setDate()
         console.log(
             [
-                this._ping,
+                this.ping,
                 this.ssid,
                 this.formattedBatteryInfo,
                 this._date,
