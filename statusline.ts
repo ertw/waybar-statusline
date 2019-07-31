@@ -12,9 +12,7 @@ type ShouldDisplay = true | false
 
 interface StatusItems {
     batteryStatus: string
-    _batteryStatus: string
     batteryCapacity: number
-    _batteryCapacity: string
     ssid: [string, ShouldDisplay]
     _ssid: string
     ping: [number, ShouldDisplay]
@@ -42,9 +40,7 @@ class StatusLine {
 
     private state: StatusItems = {
         batteryStatus: '...',
-        _batteryStatus: '',
         batteryCapacity: 0,
-        _batteryCapacity: '',
         ssid: ['...', false],
         _ssid: '',
         ping: [0, false],
