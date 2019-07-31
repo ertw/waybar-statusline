@@ -26,17 +26,12 @@ interface StatusItems {
 
 class StatusLine {
     constructor() {
-        this.setBatteryStatus()
-        setInterval(() => this.setBatteryStatus(), 2000)
-
-        this.setBatteryCapacity()
-        setInterval(() => this.setBatteryCapacity(), 10000)
-
-        this.setSsid()
-        setInterval(() => this.setSsid(), 5000)
-
-        this.setPing()
-        setInterval(() => this.setPing(), 5000)
+        [
+            { func: this.setBatteryStatus, time: 2000 },
+            { func: this.setBatteryCapacity, time: 10000 },
+            { func: this.setSsid, time: 5000 },
+            { func: this.setPing, time: 5000 },
+        ].map(_ => { _.func(); setInterval(_.func, _.time) })
     }
 
     private statusLine: StatusItems = {
@@ -55,6 +50,17 @@ class StatusLine {
 
     private shouldDisplay(tuple: [any, ShouldDisplay]) {
         return tuple[1]
+    }
+
+    private async *execCommand(command: string) {
+        try {
+            while (true) {
+                const { stdout, stderr } = await exec(command)
+                yield { stdout, stderr, error: false }
+            }
+        } catch (error) {
+            return { stdout: null, stderr: null, error: true }
+        }
     }
 
     private setBatteryCapacity = async () => {
@@ -85,18 +91,15 @@ class StatusLine {
     }
 
     private setSsid = async () => {
-        try {
-            const { stdout, stderr } = await exec('iwgetid -r')
-            if (stdout) {
-                this.statusLine.ssid = [stdout.trim(), true]
-                this.statusLine._ssid = `📶 ${this.statusLine.ssid[0]}`
-            }
-            if (stderr) {
-                this.statusLine.ssid[1] = false
-            }
-        } catch (error) {
+        const command = 'iwgetid -r'
+        const result = await this.execCommand(command).next()
+        const { stdout, stderr, error } = result.value
+        if (stdout) {
+            this.statusLine.ssid = [stdout.trim(), true]
+            this.statusLine._ssid = `📶 ${this.statusLine.ssid[0]}`
+        }
+        if (error || stderr) {
             this.statusLine.ssid[1] = false
-
         }
     }
 
@@ -113,16 +116,14 @@ class StatusLine {
     }
 
     private setPing = async () => {
-        try {
-            const { stdout, stderr } = await exec("ping -c 1 www.bing.com | awk -F '/' 'END {print $5}'")
-            if (stdout) {
-                this.statusLine.ping = [parseInt(stdout.trim()), true]
-                this.statusLine._ping = `🌩 ${isNaN(this.statusLine.ping[0]) ? 'drop' : this.statusLine.ping[0] + 'ms'}`
-            }
-            if (stderr) {
-                this.statusLine.ping = [0, false]
-            }
-        } catch (error) {
+        const command = "ping -c 1 www.bing.com | awk -F '/' 'END {print $5}'"
+        const result = await this.execCommand(command).next()
+        const { stdout, stderr } = result.value
+        const ping = stdout && stderr === '' ? parseInt(stdout.trim()) : -1
+        if (ping >= 0) {
+            this.statusLine.ping = [ping, true]
+            this.statusLine._ping = `🌩 ${isNaN(this.statusLine.ping[0]) ? 'drop' : this.statusLine.ping[0] + 'ms'}`
+        } else {
             this.statusLine.ping = [0, false]
         }
     }
