@@ -14,7 +14,6 @@ interface StatusItems {
     batteryStatus: string
     batteryCapacity: number
     ssid: [string, ShouldDisplay]
-    _ssid: string
     ping: [number, ShouldDisplay]
     _ping: string
     date: Moment
@@ -42,7 +41,6 @@ class StatusLine {
         batteryStatus: '...',
         batteryCapacity: 0,
         ssid: ['...', false],
-        _ssid: '',
         ping: [0, false],
         _ping: '',
         date: moment(),
@@ -103,7 +101,6 @@ class StatusLine {
             const { stdout, stderr, error } = result.value
             if (stdout) {
                 this.state.ssid = [stdout.trim(), true]
-                this.state._ssid = `📶 ${this.state.ssid[0]}`
             }
             if (error || stderr) {
                 this.state.ssid[1] = false
@@ -113,8 +110,8 @@ class StatusLine {
         }
     }
 
-    private get _ssid() {
-        return this.shouldDisplay(this.state.ssid) ? this.state._ssid : null
+    private get ssid() {
+        return this.shouldDisplay(this.state.ssid) ? `📶 ${this.state.ssid[0]}` : null
     }
 
     private get formattedBatteryInfo() {
@@ -151,8 +148,8 @@ class StatusLine {
         console.log(
             [
                 this._ping,
+                this.ssid,
                 this.formattedBatteryInfo,
-                this._ssid,
                 this._date,
             ]
                 .filter(x => x !== null)
