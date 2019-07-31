@@ -15,7 +15,6 @@ interface StatusItems {
     _batteryStatus: string
     batteryCapacity: number
     _batteryCapacity: string
-    _formattedBatteryInfo: string
     ssid: [string, ShouldDisplay]
     _ssid: string
     ping: [number, ShouldDisplay]
@@ -46,7 +45,6 @@ class StatusLine {
         _batteryStatus: '',
         batteryCapacity: 0,
         _batteryCapacity: '',
-        _formattedBatteryInfo: '',
         ssid: ['...', false],
         _ssid: '',
         ping: [0, false],
@@ -87,7 +85,6 @@ class StatusLine {
         try {
             const batteryCapacity = await readFile(this.state.batteryPath + 'capacity', 'utf8')
             this.state.batteryCapacity = parseInt(batteryCapacity)
-            this.setFormattedBatteryInfo()
         } catch (error) {
             console.error(error)
         }
@@ -98,7 +95,6 @@ class StatusLine {
             const status = await readFile(this.state.batteryPath + 'status', 'utf8') as BatteryStatus
             const icon = this.state.batteryIcons.find(tuple => tuple[0] === status.trim()) || ['Unknown', '⚡']
             this.state.batteryStatus = icon[1]
-            this.setFormattedBatteryInfo()
         } catch (error) {
             console.error(error)
 
@@ -125,12 +121,8 @@ class StatusLine {
         return this.shouldDisplay(this.state.ssid) ? this.state._ssid : null
     }
 
-    private setFormattedBatteryInfo = () => {
-        this.state._formattedBatteryInfo = `${this.state.batteryStatus} ${this.state.batteryCapacity}%`
-    }
-
-    private get _formattedBatteryInfo() {
-        return this.state._formattedBatteryInfo
+    private get formattedBatteryInfo() {
+        return `${this.state.batteryStatus} ${this.state.batteryCapacity}%`
     }
 
     private setPing = async () => {
@@ -163,7 +155,7 @@ class StatusLine {
         console.log(
             [
                 this._ping,
-                this._formattedBatteryInfo,
+                this.formattedBatteryInfo,
                 this._ssid,
                 this._date,
             ]
