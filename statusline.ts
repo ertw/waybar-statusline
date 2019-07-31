@@ -16,7 +16,6 @@ interface StatusItems {
     ssid: [string, ShouldDisplay]
     ping: [number, ShouldDisplay]
     date: Moment
-    _date: string
     readonly batteryIcons: Array<[BatteryStatus, string]>
     readonly batteryPath: string
     readonly commands: {
@@ -42,7 +41,6 @@ class StatusLine {
         ssid: ['...', false],
         ping: [0, false],
         date: moment(),
-        _date: '',
         batteryIcons: [
             ['Charging', '⭫🔌'],
             ['Discharging', '⭭🔋'],
@@ -136,11 +134,10 @@ class StatusLine {
 
     private setDate = () => {
         this.state.date = moment()
-        this.state._date = `${this.state.date.format(this.state.dateFormat)}`
     }
 
-    private get _date(): string {
-        return this.state._date
+    private get date(): string {
+        return `${this.state.date.format(this.state.dateFormat)}`
     }
 
     public printStatusLine = async () => {
@@ -150,7 +147,7 @@ class StatusLine {
                 this.ping,
                 this.ssid,
                 this.formattedBatteryInfo,
-                this._date,
+                this.date,
             ]
                 .filter(x => x !== null)
                 .map(x => `${x}  `)
