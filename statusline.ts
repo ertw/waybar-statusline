@@ -22,6 +22,13 @@ interface StatusItems {
     _ping: string
     date: Moment
     _date: string
+    readonly batteryIcons: Array<[BatteryStatus, string]>
+    readonly batteryPath: string
+    readonly commands: {
+        ping: string
+        iwgetid: string
+    }
+    readonly dateFormat: string
 }
 
 class StatusLine {
@@ -34,7 +41,7 @@ class StatusLine {
         ].map(_ => { _.func(); setInterval(_.func, _.time) })
     }
 
-    private statusLine: StatusItems = {
+    private state: StatusItems = {
         batteryStatus: '...',
         _batteryStatus: '',
         batteryCapacity: 0,
@@ -45,7 +52,19 @@ class StatusLine {
         ping: [0, false],
         _ping: '',
         date: moment(),
-        _date: ''
+        _date: '',
+        batteryIcons: [
+            ['Charging', '⭫🔌'],
+            ['Discharging', '⭭🔋'],
+            ['Full', '🔌'],
+            ['Unknown', '⚡'],
+        ],
+        batteryPath: '/sys/class/power_supply/BAT0/',
+        commands: {
+            ping: "ping -c 1 www.bing.com | awk -F '/' 'END {print $5}'",
+            iwgetid: 'iwgetid -r',
+        },
+        dateFormat: 'ddd D-MMM   HH:mm:ss',
     }
 
     private shouldDisplay(tuple: [any, ShouldDisplay]) {
@@ -54,91 +73,89 @@ class StatusLine {
 
     private async *execCommand(command: string) {
         try {
+            const { stdout, stderr } = await exec(command)
             while (true) {
-                const { stdout, stderr } = await exec(command)
                 yield { stdout, stderr, error: false }
             }
         } catch (error) {
             return { stdout: null, stderr: null, error: true }
+            console.error(error)
         }
     }
 
     private setBatteryCapacity = async () => {
-        const batteryCapacity = await readFile('/sys/class/power_supply/BAT0/capacity', 'utf8')
-        this.statusLine.batteryCapacity = parseInt(batteryCapacity)
-        this.setFormattedBatteryInfo()
-    }
-
-    private get batteryCapacity(): string {
-        return (this.statusLine.batteryCapacity <= 100 ? this.statusLine.batteryCapacity.toString() : 'Full')
+        try {
+            const batteryCapacity = await readFile(this.state.batteryPath + 'capacity', 'utf8')
+            this.state.batteryCapacity = parseInt(batteryCapacity)
+            this.setFormattedBatteryInfo()
+        } catch (error) {
+            console.error(error)
+        }
     }
 
     private setBatteryStatus = async () => {
-        const status = await readFile('/sys/class/power_supply/BAT0/status', 'utf8') as BatteryStatus
-        const icons: Array<[BatteryStatus, string]> = [
-            ['Charging', '⭫🔌'],
-            ['Discharging', '⭭🔋'],
-            ['Full', '🔌'],
-            ['Unknown', '⚡'],
-        ]
-        const icon = icons.find(tuple => tuple[0] === status.trim()) || ['Unknown', '⚡']
-        this.statusLine.batteryStatus = icon[1]
-        this.setFormattedBatteryInfo()
-    }
+        try {
+            const status = await readFile(this.state.batteryPath + 'status', 'utf8') as BatteryStatus
+            const icon = this.state.batteryIcons.find(tuple => tuple[0] === status.trim()) || ['Unknown', '⚡']
+            this.state.batteryStatus = icon[1]
+            this.setFormattedBatteryInfo()
+        } catch (error) {
+            console.error(error)
 
-    private get batteryStatus(): string {
-        return this.statusLine.batteryStatus
+        }
     }
 
     private setSsid = async () => {
-        const command = 'iwgetid -r'
-        const result = await this.execCommand(command).next()
-        const { stdout, stderr, error } = result.value
-        if (stdout) {
-            this.statusLine.ssid = [stdout.trim(), true]
-            this.statusLine._ssid = `📶 ${this.statusLine.ssid[0]}`
-        }
-        if (error || stderr) {
-            this.statusLine.ssid[1] = false
+        try {
+            const result = await this.execCommand(this.state.commands.iwgetid).next()
+            const { stdout, stderr, error } = result.value
+            if (stdout) {
+                this.state.ssid = [stdout.trim(), true]
+                this.state._ssid = `📶 ${this.state.ssid[0]}`
+            }
+            if (error || stderr) {
+                this.state.ssid[1] = false
+            }
+        } catch (error) {
+            console.error(error)
         }
     }
 
     private get _ssid() {
-        return this.shouldDisplay(this.statusLine.ssid) ? this.statusLine._ssid : null
+        return this.shouldDisplay(this.state.ssid) ? this.state._ssid : null
     }
 
     private setFormattedBatteryInfo = () => {
-        this.statusLine._formattedBatteryInfo = `${this.batteryStatus} ${this.batteryCapacity.trim()}%`
+        this.state._formattedBatteryInfo = `${this.state.batteryStatus} ${this.state.batteryCapacity}%`
     }
 
     private get _formattedBatteryInfo() {
-        return this.statusLine._formattedBatteryInfo
+        return this.state._formattedBatteryInfo
     }
 
     private setPing = async () => {
-        const command = "ping -c 1 www.bing.com | awk -F '/' 'END {print $5}'"
-        const result = await this.execCommand(command).next()
+        const result = await this.execCommand(this.state.commands.ping).next()
         const { stdout, stderr } = result.value
         const ping = stdout && stderr === '' ? parseInt(stdout.trim()) : -1
         if (ping >= 0) {
-            this.statusLine.ping = [ping, true]
-            this.statusLine._ping = `🌩 ${isNaN(this.statusLine.ping[0]) ? 'drop' : this.statusLine.ping[0] + 'ms'}`
+            this.state.ping = [ping, true]
+            this.state._ping = `🌩 ${isNaN(this.state.ping[0]) ? 'drop' : this.state.ping[0] + 'ms'}`
         } else {
-            this.statusLine.ping = [0, false]
+            this.state.ping = [0, false]
         }
     }
 
     private get _ping() {
-        return this.shouldDisplay(this.statusLine.ping) ? this.statusLine._ping : null
+        return this.shouldDisplay(this.state.ping) ? this.state._ping : null
     }
 
     private setDate = () => {
-        this.statusLine.date = moment()
-        this.statusLine._date = `${this.statusLine.date.format('ddd D-MMM   HH:mm:ss')}`
+        this.state.date = moment()
+        this.state._date = `${this.state.date.format(this.state.dateFormat)}`
     }
 
     private get _date(): string {
-        return this.statusLine._date
+        return this.state._date
     }
 
     public printStatusLine = async () => {
