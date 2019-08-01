@@ -87,7 +87,6 @@ class StatusLine {
             this.state.batteryStatus = icon[1]
         } catch (error) {
             console.error(error)
-
         }
     }
 
@@ -129,7 +128,6 @@ class StatusLine {
         return this.shouldDisplay(this.state.ping)
             ? `🌩 ${isNaN(this.state.ping[0]) ? 'drop' : this.state.ping[0] + 'ms'}`
             : null
-
     }
 
     private setDate = () => {
