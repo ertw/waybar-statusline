@@ -138,7 +138,7 @@ class StatusLine {
         return `${this.state.date.format(this.state.dateFormat)}`
     }
 
-    public printStatusLine = async () => {
+    public printStatusLine = () => {
         this.setDate()
         console.log(
             [
@@ -156,7 +156,7 @@ class StatusLine {
 
 const statusLine = new StatusLine
 
-const main = async () => {
+const main = () => {
     setInterval(statusLine.printStatusLine, 1000)
 }
 
