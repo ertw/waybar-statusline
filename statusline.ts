@@ -25,6 +25,10 @@ interface StatusItems {
     readonly dateFormat: string
 }
 
+interface Setter {
+    (): Promise<1 | null>
+}
+
 class StatusLine {
     constructor() {
         [
@@ -32,7 +36,8 @@ class StatusLine {
             { func: this.setBatteryCapacity, time: 10000 },
             { func: this.setSsid, time: 5000 },
             { func: this.setPing, time: 5000 },
-        ].map(_ => { _.func(); setInterval(_.func, _.time) })
+        ]
+            .forEach(x => { setInterval(x.func, x.time) })
     }
 
     private state: StatusItems = {
@@ -71,26 +76,30 @@ class StatusLine {
         }
     }
 
-    private setBatteryCapacity = async () => {
+    private setBatteryCapacity: Setter = async () => {
         try {
             const batteryCapacity = await readFile(this.state.batteryPath + 'capacity', 'utf8')
             this.state.batteryCapacity = parseInt(batteryCapacity)
+            return null
         } catch (error) {
             console.error(error)
+            return 1
         }
     }
 
-    private setBatteryStatus = async () => {
+    private setBatteryStatus: Setter = async () => {
         try {
             const status = await readFile(this.state.batteryPath + 'status', 'utf8') as BatteryStatus
             const icon = this.state.batteryIcons.find(tuple => tuple[0] === status.trim()) || ['Unknown', '⚡']
             this.state.batteryStatus = icon[1]
+            return null
         } catch (error) {
             console.error(error)
+            return 1
         }
     }
 
-    private setSsid = async () => {
+    private setSsid: Setter = async () => {
         try {
             const result = await this.execCommand(this.state.commands.iwgetid).next()
             const { stdout, stderr, error } = result.value
@@ -100,8 +109,10 @@ class StatusLine {
             if (error || stderr) {
                 this.state.ssid[1] = false
             }
+            return null
         } catch (error) {
             console.error(error)
+            return 1
         }
     }
 
@@ -113,14 +124,21 @@ class StatusLine {
         return `${this.state.batteryStatus} ${this.state.batteryCapacity}%`
     }
 
-    private setPing = async () => {
-        const result = await this.execCommand(this.state.commands.ping).next()
-        const { stdout, stderr } = result.value
-        const ping = stdout && stderr === '' ? parseInt(stdout.trim()) : -1
-        if (ping >= 0) {
-            this.state.ping = [ping, true]
-        } else {
-            this.state.ping = [0, false]
+    private setPing: Setter = async () => {
+        try {
+            const result = await this.execCommand(this.state.commands.ping).next()
+            const { stdout, stderr } = result.value
+            const ping = stdout && stderr === '' ? parseInt(stdout.trim()) : -1
+            if (ping >= 0) {
+                this.state.ping = [ping, true]
+            } else {
+                this.state.ping = [0, false]
+            }
+            return null
+
+        } catch (error) {
+            console.error(error)
+            return 1
         }
     }
 
